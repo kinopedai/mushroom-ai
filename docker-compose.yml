@@ -1,0 +1,29 @@
+version: "3.7"
+
+services:
+  trainer:
+    build:
+      context: ./trainer
+    image: mushroom-trainer:local
+    container_name: mushroom-trainer
+    working_dir: /workspace
+    volumes:
+      - ./data:/workspace/data
+      - ./artifacts:/workspace/artifacts
+    env_file:
+      - .env
+    # ここでは Hello World を出すだけ
+    command: ["bash", "-lc", "python train.py"]
+
+  infer:
+    build:
+      context: ./infer
+    image: mushroom-infer-go:local
+    container_name: mushroom-infer-go
+    working_dir: /app
+    env_file:
+      - .env
+    ports:
+      - "8080:${INFER_PORT}"
+    # こちらは簡易HTTPサーバで /health と /hello を返すだけ
+    command: ["/app/server"]
