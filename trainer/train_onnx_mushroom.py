@@ -1,14 +1,14 @@
 # train_onnx_mushroom.py
-import argparse  # コマンドライン引数（設定値）を受け取るため
-import os        # パス操作に使う
-import random    # 乱数（シャッフルなど）に使う
+import argparse # コマンドライン引数（設定値）を受け取るため
+import os # パス操作に使う
+import random # 乱数（シャッフルなど）に使う
 import numpy as np  # 数値計算（評価時の計算に少し使う）
-import torch     # PyTorch本体
-import torch.nn as nn  # ニューラルネットの部品（損失関数など）
-import torch.optim as optim  # 最適化（重みの更新方法）
-from torch.utils.data import DataLoader  # データを小分けで取り出す道具
-from torchvision import datasets, transforms, models  # 画像読み込み・変換・モデル
-from sklearn.metrics import f1_score  # 評価（マクロF1）
+import torch # PyTorch本体
+import torch.nn as nn # ニューラルネットの部品（損失関数など）
+import torch.optim as optim # 最適化（重みの更新方法）
+from torch.utils.data import DataLoader # データを小分けで取り出す道具
+from torchvision import datasets, transforms, models # 画像読み込み・変換・モデル
+from sklearn.metrics import f1_score # 評価（マクロF1）
 
 # 学習の設定値をコマンドから受け取れるよう設定
 def parse_args():
@@ -69,7 +69,7 @@ def build_dataloaders(root: str, train_tf, val_tf, batch: int, workers: int):
 
     return train_ds, val_ds, train_loader, val_loader
 
-# 既存の有名モデル（ResNet18）を使う（軽めで速い・精度そこそこ）
+# 既存の有名モデル（ResNet18）を使用
 def build_model(num_classes: int, device: torch.device):
     # 学習済みのResNet18を呼ぶ
     model = models.resnet18(weights=models.ResNet18_Weights.DEFAULT)
@@ -109,21 +109,18 @@ def main():
     train_ds, val_ds, train_loader, val_loader = build_dataloaders(
         args.data_root, train_tf, val_tf, args.batch, args.workers
     )
-    # ククラス（フォルダ）の数を自動で取得
+    # クラス（フォルダ）の数を自動で取得
     num_classes = len(train_ds.classes)
     # クラス名を表示して確認（例：['Agaricus', 'Boletus', ...]）
     print(f"Classes: {train_ds.classes}")
     # モデルを用意（既成モデルの最後だけ差し替え）
     model = build_model(num_classes, device)
-    # ------------------------------------------------------------
-    ### ここから要精査
     # 分類の基本的な損失関数（どれだけ間違えたかの物差し）
     criterion = nn.CrossEntropyLoss()
     # 学習の進め方（AdamW）重みの更新ルール
     optimizer = optim.AdamW(model.parameters(), lr=args.lr)  
     # これまでの最高正解率を保持しておく
     best_acc = 0.0
-    # ------------------------------------------------------------
 
     # 学習ループ
     for epoch in range(1, args.epochs + 1):
