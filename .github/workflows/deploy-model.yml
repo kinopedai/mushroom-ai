@@ -1,0 +1,37 @@
+name: Deploy Model to S3
+
+on:
+  push:
+    branches:
+      - develop
+    paths:
+      - 'artifacts/mushroom.onnx'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: arn:aws:iam::${{ vars.AWS_ACCOUNT_ID }}:role/github
+        aws-region: ${{ vars.AWS_REGION || 'us-west-2' }}
+        
+    - name: Check if model exists
+      run: |
+        if [ ! -f artifacts/mushroom.onnx ]; then
+          echo "Model file not found, skipping upload"
+          exit 0
+        fi
+        
+    - name: Upload to S3 with overwrite
+      run: |
+        aws s3 cp artifacts/mushroom.onnx s3://${{ vars.S3_BUCKET }}/models/mushroom.onnx --metadata "uploaded=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        echo "Model uploaded to S3 successfully at $(date)"
