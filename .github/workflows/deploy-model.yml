@@ -35,3 +35,4 @@ jobs:
       run: |
         aws s3 cp artifacts/mushroom.onnx s3://${{ vars.S3_BUCKET }}/models/mushroom.onnx --metadata "uploaded=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
         echo "Model uploaded to S3 successfully at $(date)"
+        echo "Upload completed"
