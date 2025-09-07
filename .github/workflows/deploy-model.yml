@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - develop
-    paths:
-      - 'artifacts/mushroom.onnx'
+    # paths:
+    #   - 'artifacts/mushroom.onnx'
 
 jobs:
   deploy:
