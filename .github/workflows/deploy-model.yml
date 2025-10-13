@@ -6,6 +6,26 @@ on:
       - develop
     # paths:
     #   - 'artifacts/mushroom.onnx'
+  workflow_dispatch:
+    inputs:
+      source_path:
+        description: 'Source file or directory to upload'
+        required: true
+        default: 'artifacts/mushroom.onnx'
+        type: string
+      s3_destination:
+        description: 'S3 destination path (without bucket name)'
+        required: true
+        default: 'models/mushroom.onnx'
+        type: string
+      upload_type:
+        description: 'Upload type'
+        required: true
+        default: 'file'
+        type: choice
+        options:
+        - file
+        - directory
 
 jobs:
   deploy:
@@ -24,15 +44,27 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: ${{ vars.AWS_REGION || 'us-west-2' }}
         
-    - name: Check if model exists
+    - name: Check if source exists
       run: |
-        if [ ! -f artifacts/mushroom.onnx ]; then
-          echo "Model file not found, skipping upload"
-          exit 0
+        SOURCE_PATH="${{ inputs.source_path || 'artifacts/mushroom.onnx' }}"
+        if [ ! -e "$SOURCE_PATH" ]; then
+          echo "Source path '$SOURCE_PATH' not found, skipping upload"
+          exit 1
         fi
-        
-    - name: Upload to S3 with overwrite
+        echo "Source path '$SOURCE_PATH' exists"
+
+    - name: Upload to S3
       run: |
-        aws s3 cp artifacts/mushroom.onnx s3://${{ vars.S3_BUCKET }}/models/mushroom.onnx --metadata "uploaded=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-        echo "Model uploaded to S3 successfully at $(date)"
-        echo "Upload completed"
+        SOURCE_PATH="${{ inputs.source_path || 'artifacts/mushroom.onnx' }}"
+        S3_DEST="${{ inputs.s3_destination || 'models/mushroom.onnx' }}"
+        UPLOAD_TYPE="${{ inputs.upload_type || 'file' }}"
+
+        if [ "$UPLOAD_TYPE" = "directory" ]; then
+          echo "Uploading directory '$SOURCE_PATH' to s3://${{ vars.S3_BUCKET }}/$S3_DEST"
+          aws s3 cp "$SOURCE_PATH" "s3://${{ vars.S3_BUCKET }}/$S3_DEST" --recursive --metadata "uploaded=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        else
+          echo "Uploading file '$SOURCE_PATH' to s3://${{ vars.S3_BUCKET }}/$S3_DEST"
+          aws s3 cp "$SOURCE_PATH" "s3://${{ vars.S3_BUCKET }}/$S3_DEST" --metadata "uploaded=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+        fi
+
+        echo "Upload completed successfully at $(date)"
